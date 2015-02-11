@@ -2,8 +2,8 @@
 /*jslint indent: 4 */
 /*global $, jQuery, alert*/
 
-var DEFAULT_CANVAS_WIDTH = 1600,
-    DEFAULT_CANVAS_HEIGHT = 1200,
+var DEFAULT_CANVAS_WIDTH = 1200,
+    DEFAULT_CANVAS_HEIGHT = 800,
     DEFAULT_TEXT_WINDOW_MARGIN = 15,
     DEFAULT_TEXT_WINDOW_PADDING = 15,
     DEFAULT_FONT_SIZE = 25;
@@ -14,7 +14,7 @@ var DEFAULT_CANVAS_WIDTH = 1600,
  * @param {Number} dw 描画先幅
  * @param {Number} dh 描画先高さ
  */
-var __Background__ = function(id, imageUri, dw, dh) {
+var __Background__ = function (id, imageUri, dw, dh) {
     'use strict';
     this.id = id;
     this.imageUri = imageUri;
@@ -28,7 +28,8 @@ var __Background__ = function(id, imageUri, dw, dh) {
 /**
  * オブジェクト生成時に与えられたURIの画像をロードする
  */
-__Background__.prototype.loadImage = function() {
+__Background__.prototype.loadImage = function () {
+    'use strict';
     var background = this,
         image = new Image();
     image.addEventListener("load", function () {
@@ -46,12 +47,13 @@ __Background__.prototype.loadImage = function() {
  * @param {Number} dh 描画先高さ
  * @return {Boolean} 描画したか否か
  */
-__Background__.prototype.play = function(context) {
+__Background__.prototype.play = function (context) {
+    'use strict';
     var background = this;
     if (background.isPlayable === true) {
         context.drawImage(background.loadedImage, 0, 0, background.dw, background.dh);
     } else {
-        setTimeout( function() { background.play(context); }, 500);
+        setTimeout(function () { background.play(context); }, 500);
     }
 };
 
@@ -63,7 +65,7 @@ __Background__.prototype.play = function(context) {
  * @param {Number} dw 描画先幅
  * @param {Number} dh 描画先高さ
  */
-var __Character__ = function(id, name, imageUris, dx, dy, dw, dh) {
+var __Character__ = function (id, name, imageUris, dx, dy, dw, dh) {
     'use strict';
     this.id = id;
     this.name = name;
@@ -77,16 +79,15 @@ var __Character__ = function(id, name, imageUris, dx, dy, dw, dh) {
     this.dw = dw;
     this.dh = dh;
     this.zIndex = 100;
-}
+};
 
 /**
  * オブジェクト生成時に与えられたURIの画像をロードする
  */
-__Character__.prototype.loadImages = function() {
+__Character__.prototype.loadImages = function () {
     'use strict';
-    var character = this;
+    var character = this, image = new Image();
     if (character.imageUris !== 0) {
-        var image = new Image();
         image.addEventListener("load", function () {
             character.numLoadedImages += 1;
             character.loadedImages.push(image);
@@ -108,7 +109,7 @@ __Character__.prototype.loadImages = function() {
  * @param {CanvasRenderingContext2D} context コンテキスト
  * @return {Boolean} 描画したか否か
  */
-__Character__.prototype.play = function(context) {
+__Character__.prototype.play = function (context) {
     'use strict';
     var i = 0,
         character = this;
@@ -117,9 +118,8 @@ __Character__.prototype.play = function(context) {
             context.drawImage(character.loadedImages[i], character.dx, character.dy, character.dw, character.dh);
         }
         return true;
-    } else {
-        setTimeout( function() { character.play(context); }, 500);
     }
+    setTimeout(function () { character.play(context); }, 500);
 };
 
 /**
@@ -132,24 +132,29 @@ __Character__.prototype.play = function(context) {
  * @param {Number} padding テキストウィンドウのパディング
  * @param {Number} fontSize フォントサイズ
  */
-var __TextWindow__ = function(text, canvasWidth, canvasHeight, margin, padding, fontSize) {
+var __TextWindow__ = function (text, canvasWidth, canvasHeight, margin, padding, fontSize) {
     'use strict';
     this.text = text;
-    this.cw = typeof canvasWidth !== 'undefined' ? canvasWidth : DEFAULT_CANVAS_WIDTH;
-    this.ch = typeof canvasHeight !== 'undefined' ? canvasHeight : DEFAULT_CANVAS_HEIGHT;
-    this.margin = typeof margin !== 'undefined' ? margin : DEFAULT_TEXT_WINDOW_MARGIN;
-    this.padding = typeof padding !== 'undefined' ? padding : DEFAULT_TEXT_WINDOW_PADDING;
-    this.fontSize = typeof fontSize !== 'undefined' ? fontSize : DEFAULT_FONT_SIZE;
+    this.cw = canvasWidth || DEFAULT_CANVAS_WIDTH;
+    this.ch =  canvasHeight || DEFAULT_CANVAS_HEIGHT;
+    this.margin = margin || DEFAULT_TEXT_WINDOW_MARGIN;
+    this.padding = padding || DEFAULT_TEXT_WINDOW_PADDING;
+    this.fontSize = fontSize || DEFAULT_FONT_SIZE;
     this.width = this.cw - 2 * this.margin;
     this.height = 3 * this.fontSize + 2 * this.padding;
     this.dx = this.margin;
     this.dy = this.ch - this.height - this.margin;
     this.zIndex = 200;
-}
+};
 
-__TextWindow__.prototype.__fillText = function(context, text) {
+__TextWindow__.prototype._fillText = function (context, text) {
     'use strict';
-    var i = 0, texts = [""], c = "", line = 0;
+    var i = 0,
+        texts = [""],
+        c = "",
+        line = 0,
+        x = this.dx + this.padding,
+        y = this.dy + this.padding;
     for (i = 0; i < text.length; i += 1) {
         c = text.charAt(i);
         if (context.measureText(texts[line] + c).width + 2 > this.width - 2 * this.padding) {
@@ -158,14 +163,12 @@ __TextWindow__.prototype.__fillText = function(context, text) {
         }
         texts[line] += c;
     }
-    var x = this.dx + this.padding,
-        y = this.dy + this.padding;
     for (i = 0; i <= line; i += 1) {
         context.fillText(texts[i], x, y + this.fontSize * (i + 1));
     }
 };
 
-__TextWindow__.prototype.__finalize = function(context) {
+__TextWindow__.prototype._finalize = function (context) {
     'use strict';
     context.fillStyle = "#000000";
     context.globalAlpha = 1.0;
@@ -180,7 +183,7 @@ __TextWindow__.prototype.__finalize = function(context) {
  * @param {CanvasRenderingContext2D} context コンテキスト
  * @return {Boolean} 描画したか否か
  */
-__TextWindow__.prototype.play = function(context) {
+__TextWindow__.prototype.play = function (context) {
     'use strict';
     // text window
     context.fillStyle = "#000000";
@@ -197,8 +200,8 @@ __TextWindow__.prototype.play = function(context) {
     context.shadowOffsetX = 2;
     context.shadowOffsetY = 2;
     context.shadowBlur = 2;
-    this.__fillText(context, this.text);
-    this.__finalize(context);
+    this._fillText(context, this.text);
+    this._finalize(context);
     return true;
 };
 
@@ -208,14 +211,14 @@ __TextWindow__.prototype.play = function(context) {
  * @param {String} id 識別子
  * @param {Array} entities エンティティの配列
  */
-var __Stage__ = function(id, entities) {
+var __Stage__ = function (id, entities) {
     'use strict';
     this.id = id;
     this.entities = entities.sort(this.compareEntities);
     this.numEntities = entities.length;
 };
 
-__Stage__.prototype.compareEntities = function(a, b) {
+__Stage__.prototype.compareEntities = function (a, b) {
     'use strict';
     return a.zIndex - b.zIndex;
 };
@@ -227,18 +230,18 @@ __Stage__.prototype.compareEntities = function(a, b) {
  * @param {CanvasRenderingContext2D} context コンテキスト
  * @return {Boolean} 描画したか否か
  */
-__Stage__.prototype.play = function(context) {
+__Stage__.prototype.play = function (context) {
     'use strict';
-    var i = 0, stage = this;
+    var i = 0, stage = this, entity = null;
     for (i = 0; i < stage.numEntities; i += 1) {
-        var entity = stage.entities[i];
+        entity = stage.entities[i];
         if (entity.isPlayable === false) {
-            window.setTimeout(function () { stage.play(context); }, 500);
+            setTimeout(function () { stage.play(context); }, 500);
             return false;
         }
     }
     for (i = 0; i < stage.numEntities; i += 1) {
-        var entity = stage.entities[i];
+        entity = stage.entities[i];
         entity.play(context);
     }
     return true;
